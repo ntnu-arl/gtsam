@@ -129,24 +129,22 @@ public:
     }
     const gtsam::Matrix36 Hl_1 = Hl;
 
+    gtsam::Matrix33 common = gtsam::skewSymmetric(i_w - l_w) *
+                               (gtsam::Matrix33::Identity() - dv_w * dv_w.transpose()) / (j_w - l_w).norm();
+    gtsam::Matrix33 dv_w_ss = gtsam::skewSymmetric(dv_w);
+
     if (H0) {
-      gtsam::Matrix36 temp = gtsam::skewSymmetric(i_w - l_w) *
-                               (gtsam::Matrix33::Identity() - dv_w * dv_w.transpose()) *
-                               (Hj_0 - Hl_0) / (j_w - l_w).norm() +
-                             gtsam::skewSymmetric(dv_w) * Hl_0;
+      const gtsam::Matrix36 temp = common * (Hj_0 - Hl_0) + dv_w_ss * Hl_0;
       *H0 = temp;
     }
 
     if (H1) {
-      gtsam::Matrix36 temp = gtsam::skewSymmetric(i_w - l_w) *
-                               (gtsam::Matrix33::Identity() - dv_w * dv_w.transpose()) *
-                               (Hj_1 - Hl_1) / (j_w - l_w).norm() +
-                             gtsam::skewSymmetric(dv_w) * Hl_1;
+      const gtsam::Matrix36 temp = common * (Hj_1 - Hl_1) + dv_w_ss * Hl_1;
       *H1 = temp;
     }
 
     if (H2) {
-      gtsam::Matrix36 temp = -gtsam::skewSymmetric(dv_w) * (Hi_2);
+      const gtsam::Matrix36 temp = -dv_w_ss * (Hi_2);
       *H2 = temp;
     }
     return residual;
