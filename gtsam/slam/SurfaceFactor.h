@@ -259,10 +259,6 @@ namespace gtsam
     gtsam::Point3 m2_; // In the frame of the third key
     gtsam::Point3 i3_; // In the frame of the fourth key
 
-    bool same_key_jl_;
-    bool same_key_lm_;
-    bool same_key_jm_;
-
   public:
     typedef gtsam::NoiseModelFactor4<gtsam::Pose3, gtsam::Pose3, gtsam::Pose3, gtsam::Pose3> Base;
     typedef SurfaceFactor4 This;
@@ -276,10 +272,7 @@ namespace gtsam
           j0_(j0),
           l1_(l1),
           m2_(m2),
-          i3_(i3),
-          same_key_jl_(k0 == k1),
-          same_key_lm_(k1 == k2),
-          same_key_jm_(k0 == k2)
+          i3_(i3)
     {
     }
 
@@ -309,54 +302,15 @@ namespace gtsam
       gtsam::Vector3 n_w_hat = n_w / n_w.norm();
       gtsam::Vector3 residual = (i_w - m_w).dot(n_w_hat) * n_w_hat;
 
-      const gtsam::Matrix36 Hi_3 = Hi;
-      const gtsam::Matrix36 Hj_0 = Hj;
-      gtsam::Matrix36 Hj_1, Hl_0;
-      if (same_key_jl_)
-      {
-        Hj_1 = Hj;
-        Hl_0 = Hl;
-      }
-      else
-      {
-        Hj_1 = gtsam::Matrix36::Zero();
-        Hl_0 = gtsam::Matrix36::Zero();
-      }
-      gtsam::Matrix36 Hj_2, Hm_0;
-      if (same_key_jm_)
-      {
-        Hj_2 = Hj;
-        Hm_0 = Hm;
-      }
-      else
-      {
-        Hj_2 = gtsam::Matrix36::Zero();
-        Hm_0 = gtsam::Matrix36::Zero();
-      }
-      const gtsam::Matrix36 Hl_1 = Hl;
-      gtsam::Matrix36 Hl_2, Hm_1;
-      if (same_key_lm_)
-      {
-        Hl_2 = Hl;
-        Hm_1 = Hm;
-      }
-      else
-      {
-        Hl_2 = gtsam::Matrix36::Zero();
-        Hm_1 = gtsam::Matrix36::Zero();
-      }
-      const gtsam::Matrix36 Hm_2 = Hm;
-
       if (H0)
       {
         gtsam::Matrix36 d_n_w_hat = (gtsam::Matrix33::Identity() - n_w_hat * n_w_hat.transpose()) *
-                                    (gtsam::skewSymmetric(l_w - m_w) * (Hj_0 - Hm_0) -
-                                     gtsam::skewSymmetric(j_w - m_w) * (Hl_0 - Hm_0)) /
+                                    (gtsam::skewSymmetric(l_w - m_w) * Hj) /
                                     n_w.norm();
 
         gtsam::Matrix36 temp =
             ((i_w - m_w).dot(n_w_hat)) * d_n_w_hat +
-            n_w_hat * ((i_w - m_w).transpose() * d_n_w_hat - n_w_hat.transpose() * Hm_0);
+            n_w_hat * ((i_w - m_w).transpose() * d_n_w_hat);
 
         *H0 = temp;
       }
@@ -364,13 +318,12 @@ namespace gtsam
       if (H1)
       {
         gtsam::Matrix36 d_n_w_hat = (gtsam::Matrix33::Identity() - n_w_hat * n_w_hat.transpose()) *
-                                    (gtsam::skewSymmetric(l_w - m_w) * (Hj_1 - Hm_1) -
-                                     gtsam::skewSymmetric(j_w - m_w) * (Hl_1 - Hm_1)) /
+                                    (- gtsam::skewSymmetric(j_w - m_w) * Hl) /
                                     n_w.norm();
 
         gtsam::Matrix36 temp =
             ((i_w - m_w).dot(n_w_hat)) * d_n_w_hat +
-            n_w_hat * ((i_w - m_w).transpose() * d_n_w_hat - n_w_hat.transpose() * Hm_1);
+            n_w_hat * ((i_w - m_w).transpose() * d_n_w_hat);
 
         *H1 = temp;
       }
@@ -378,20 +331,19 @@ namespace gtsam
       if (H2)
       {
         gtsam::Matrix36 d_n_w_hat = (gtsam::Matrix33::Identity() - n_w_hat * n_w_hat.transpose()) *
-                                    (gtsam::skewSymmetric(l_w - m_w) * (Hj_2 - Hm_2) -
-                                     gtsam::skewSymmetric(j_w - m_w) * (Hl_2 - Hm_2)) /
+                                    ((gtsam::skewSymmetric(l_w - m_w) - gtsam::skewSymmetric(j_w - m_w)) * (- Hm)) /
                                     n_w.norm();
 
         gtsam::Matrix36 temp =
             ((i_w - m_w).dot(n_w_hat)) * d_n_w_hat +
-            n_w_hat * ((i_w - m_w).transpose() * d_n_w_hat - n_w_hat.transpose() * Hm_2);
+            n_w_hat * ((i_w - m_w).transpose() * d_n_w_hat - n_w_hat.transpose() * Hm);
 
         *H2 = temp;
       }
 
       if (H3)
       {
-        gtsam::Matrix36 temp = n_w_hat * n_w_hat.transpose() * Hi_3;
+        gtsam::Matrix36 temp = n_w_hat * n_w_hat.transpose() * Hi;
 
         *H3 = temp;
       }
