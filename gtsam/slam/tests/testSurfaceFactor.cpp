@@ -11,7 +11,6 @@ using namespace gtsam;
 using symbol_shorthand::X; // Pose3 (x,y,z,r,p,y)
 
 std::mt19937 mt(42);
-size_t max_points = 10;
 double max_edge_len = 0.5;
 
 void getOptimizedError(const NonlinearFactorGraph &graph, const Values &initial, const Values &ground_truth, Values &result, Pose3 &p1_error, Pose3 &p2_error)
@@ -45,7 +44,7 @@ TEST(SurfaceFactor2, JacobiansAndOpt1)
   values.insert(X(1), p1);
   values.insert(X(2), p2);
 
-  for (size_t iter = 0; iter < max_points; ++iter)
+  for (size_t iter = 0; iter < 10; ++iter)
   {
     Point3 j_w = Point3::Random();
     Vector3 dv1_w = Vector3::Random();
@@ -105,7 +104,7 @@ TEST(SurfaceFactor3JM, JacobiansAndOpt1)
   values.insert(X(2), p2);
   values.insert(X(3), p3);
 
-  for (size_t iter = 0; iter < max_points; ++iter)
+  for (size_t iter = 0; iter < 10; ++iter)
   {
     Point3 j_w = Point3::Random();
     Vector3 dv1_w = Vector3::Random();
@@ -167,7 +166,7 @@ TEST(SurfaceFactor3LM, JacobiansAndOpt1)
   values.insert(X(2), p2);
   values.insert(X(3), p3);
 
-  for (size_t iter = 0; iter < max_points; ++iter)
+  for (size_t iter = 0; iter < 10; ++iter)
   {
     Point3 j_w = Point3::Random();
     Vector3 dv1_w = Vector3::Random();
