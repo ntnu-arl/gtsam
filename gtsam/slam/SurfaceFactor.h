@@ -164,6 +164,93 @@ namespace gtsam
     }
   };
 
+  class GTSAM_EXPORT SurfaceFactor3LM
+      : public gtsam::NoiseModelFactor3<gtsam::Pose3, gtsam::Pose3, gtsam::Pose3>
+  {
+    gtsam::Point3 j0_; // In the frame of the first key
+    gtsam::Point3 l1_; // In the frame of the second key
+    gtsam::Point3 m1_; // In the frame of the first key
+    gtsam::Point3 i2_; // In the frame of the third key
+
+  public:
+    typedef gtsam::NoiseModelFactor3<gtsam::Pose3, gtsam::Pose3, gtsam::Pose3> Base;
+    typedef SurfaceFactor3LM This;
+    typedef boost::shared_ptr<This> shared_ptr;
+
+    SurfaceFactor3LM(
+        const gtsam::Point3 &j0, gtsam::Key k0, const gtsam::Point3 &l1, gtsam::Key k1,
+        const gtsam::Point3 &m1, const gtsam::Point3 &i2, gtsam::Key k2,
+        const gtsam::SharedNoiseModel &model)
+        : Base(model, k0, k1, k2),
+          j0_(j0),
+          l1_(l1),
+          m1_(m1),
+          i2_(i2)
+    {
+    }
+
+    virtual ~SurfaceFactor3LM() {}
+
+    virtual gtsam::NonlinearFactor::shared_ptr clone() const override
+    {
+      return boost::static_pointer_cast<gtsam::NonlinearFactor>(
+          gtsam::NonlinearFactor::shared_ptr(new This(*this)));
+    }
+
+    /// Evaluate error h(x)-z and optionally derivatives
+    gtsam::Vector evaluateError(
+        const gtsam::Pose3 &p0, const gtsam::Pose3 &p1, const gtsam::Pose3 &p2, boost::optional<gtsam::Matrix &> H0 = boost::none,
+        boost::optional<gtsam::Matrix &> H1 = boost::none,
+        boost::optional<gtsam::Matrix &> H2 = boost::none) const override
+    {
+      gtsam::Matrix36 Hi, Hj, Hl, Hm;
+      bool compute_jacobians = H0 || H1 || H2;
+      gtsam::Point3 j_w = p0.transformFrom(j0_, compute_jacobians ? &Hj : 0);
+      gtsam::Point3 l_w = p1.transformFrom(l1_, compute_jacobians ? &Hl : 0);
+      gtsam::Point3 m_w = p1.transformFrom(m1_, compute_jacobians ? &Hm : 0);
+      gtsam::Point3 i_w = p2.transformFrom(i2_, compute_jacobians ? &Hi : 0);
+      gtsam::Vector3 n_w = (l_w - m_w).cross(j_w - m_w);
+      gtsam::Vector3 n_w_hat = n_w / n_w.norm();
+      gtsam::Vector3 residual = (i_w - m_w).dot(n_w_hat) * n_w_hat;
+
+      if (H0)
+      {
+        gtsam::Matrix36 d_n_w_hat = (gtsam::Matrix33::Identity() - n_w_hat * n_w_hat.transpose()) *
+                                    (gtsam::skewSymmetric(l_w - m_w) * (Hj)) /
+                                    n_w.norm();
+
+        gtsam::Matrix36 temp =
+            ((i_w - m_w).dot(n_w_hat)) * d_n_w_hat +
+            n_w_hat * ((i_w - m_w).transpose() * d_n_w_hat);
+
+        *H0 = temp;
+      }
+
+      if (H1)
+      {
+        gtsam::Matrix36 d_n_w_hat = (gtsam::Matrix33::Identity() - n_w_hat * n_w_hat.transpose()) *
+                                    (gtsam::skewSymmetric(l_w - m_w) * (-Hm) -
+                                     gtsam::skewSymmetric(j_w - m_w) * (Hl - Hm)) /
+                                    n_w.norm();
+
+        gtsam::Matrix36 temp =
+            ((i_w - m_w).dot(n_w_hat)) * d_n_w_hat +
+            n_w_hat * ((i_w - m_w).transpose() * d_n_w_hat - n_w_hat.transpose() * Hm);
+
+        *H1 = temp;
+      }
+
+      if (H2)
+      {
+        gtsam::Matrix36 temp = n_w_hat * n_w_hat.transpose() * Hi;
+
+        *H2 = temp;
+      }
+
+      return residual;
+    }
+  };
+
   class GTSAM_EXPORT SurfaceFactor4
       : public gtsam::NoiseModelFactor4<gtsam::Pose3, gtsam::Pose3, gtsam::Pose3, gtsam::Pose3>
   {
