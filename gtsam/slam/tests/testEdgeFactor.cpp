@@ -38,7 +38,7 @@ TEST(EdgeFactor2, JacobiansAndOpt1)
   values.insert(X(1), p1);
   values.insert(X(2), p2);
 
-  for (size_t iter = 1; iter < max_points; ++iter)
+  for (size_t iter = 0; iter < max_points; ++iter)
   {
     Point3 j = Point3::Random();
     Vector3 dv = Vector3::Random();
@@ -93,7 +93,7 @@ TEST(EdgeFactor3, JacobiansAndOpt1)
   values.insert(X(2), p2);
   values.insert(X(3), p3);
 
-  for (size_t iter = 1; iter < max_points; ++iter)
+  for (size_t iter = 0; iter < max_points; ++iter)
   {
     Point3 j_in_w = Point3::Random();
     Vector3 dv = Vector3::Random();
@@ -136,7 +136,7 @@ TEST(EdgeFactor3, JacobiansAndOpt1)
 //   values.insert(X(1), p1);
 //   values.insert(X(2), p2);
 
-//   for (size_t iter = 1; iter < max_points; ++iter)
+//   for (size_t iter = 0; iter < max_points; ++iter)
 //   {
 //     Point3 j = Point3::Random();
 //     Point3 l = Point3::Random();
@@ -168,7 +168,7 @@ TEST(EdgeFactor3, JacobiansAndOpt1)
 //   values.insert(X(1), p1);
 //   values.insert(X(2), p2);
 
-//   for (size_t iter = 1; iter < max_points; ++iter)
+//   for (size_t iter = 0; iter < max_points; ++iter)
 //   {
 //     Point3 j = Point3::Random();
 //     Point3 l = l;
@@ -215,7 +215,7 @@ TEST(EdgeFactor3, JacobiansAndOpt1)
 //   values.insert(X(2), p2);
 //   values.insert(X(3), p3);
 
-//   for (size_t iter = 1; iter < max_points; ++iter)
+//   for (size_t iter = 0; iter < max_points; ++iter)
 //   {
 //     Point3 j = Point3::Random();
 //     Point3 l = Point3::Random();
