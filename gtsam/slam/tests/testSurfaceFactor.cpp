@@ -243,14 +243,14 @@ TEST(SurfaceFactor4, JacobiansAndOpt1)
     Point3 j_w = Point3::Random();
     Vector3 dv1_w = Vector3::Random();
     dv1_w.normalize();
-    double edge_len1 = std::max(rand() / static_cast<double>(RAND_MAX) * max_edge_len, min_edge_len);
+    double edge_len1 = std::max(rand() * max_edge_len / static_cast<double>(RAND_MAX), min_edge_len);
     Point3 l_w = j_w + edge_len1 * dv1_w;
     Vector3 dv2_w = Vector3::Random();
     dv2_w.normalize();
-    double edge_len2 = std::max(rand() / static_cast<double>(RAND_MAX) * max_edge_len, min_edge_len);
+    double edge_len2 = std::max(rand() * max_edge_len / static_cast<double>(RAND_MAX), min_edge_len);
     Point3 m_w = j_w + edge_len2 * dv2_w;
-    float lambda1 = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-    float lambda2 = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    float lambda1 = static_cast<float>(rand()) * edge_len1 / static_cast<float>(RAND_MAX);
+    float lambda2 = static_cast<float>(rand()) * edge_len2 / static_cast<float>(RAND_MAX);
     Point3 i_w = j_w + lambda1 * dv1_w + lambda2 * dv2_w;
     Point3 i = p4.transformTo(i_w) + Point3::Random().normalized() * 0.00001;
 
