@@ -252,7 +252,7 @@ TEST(SurfaceFactor4, JacobiansAndOpt1)
     float lambda1 = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
     float lambda2 = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
     Point3 i_w = j_w + lambda1 * dv1_w + lambda2 * dv2_w;
-    Point3 i = p3.transformTo(i_w) + Point3::Random().normalized() * 0.00001;
+    Point3 i = p4.transformTo(i_w) + Point3::Random().normalized() * 0.00001;
 
     // Reorder points to make sure that m_w is the furthest point
     if ((i_w - j_w).norm() > (i_w - m_w).norm())
@@ -269,22 +269,8 @@ TEST(SurfaceFactor4, JacobiansAndOpt1)
     Point3 l = p2.transformTo(l_w);
     Point3 m = p3.transformTo(m_w);
 
-    std::cout << "j_w: " << j_w.transpose() << std::endl;
-    std::cout << "l_w: " << l_w.transpose() << std::endl;
-    std::cout << "m_w: " << m_w.transpose() << std::endl;
-    std::cout << "i_w: " << i_w.transpose() << std::endl;
-    p1.print("p1");
-    p2.print("p2");
-    p3.print("p3");
-    p4.print("p4");
-    std::cout << "j: " << j.transpose() << std::endl;
-    std::cout << "l: " << l.transpose() << std::endl;
-    std::cout << "m: " << m.transpose() << std::endl;
-    std::cout << "i: " << i.transpose() << std::endl;
-
-
     SurfaceFactor4 factor(j, X(1), l, X(2), m, X(3), i, X(4), noiseModel::Unit::Create(3));
-    EXPECT_CORRECT_FACTOR_JACOBIANS(factor, values, 1e-5, 1e-4);
+    EXPECT_CORRECT_FACTOR_JACOBIANS(factor, values, 1e-5, 1e-5);
     graph.add(factor);
   }
 
