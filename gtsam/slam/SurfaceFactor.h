@@ -318,7 +318,7 @@ namespace gtsam
       if (H1)
       {
         gtsam::Matrix36 d_n_w_hat = (gtsam::Matrix33::Identity() - n_w_hat * n_w_hat.transpose()) *
-                                    (- gtsam::skewSymmetric(j_w - m_w) * Hl) /
+                                    (-gtsam::skewSymmetric(j_w - m_w) * Hl) /
                                     n_w.norm();
 
         gtsam::Matrix36 temp =
@@ -331,7 +331,7 @@ namespace gtsam
       if (H2)
       {
         gtsam::Matrix36 d_n_w_hat = (gtsam::Matrix33::Identity() - n_w_hat * n_w_hat.transpose()) *
-                                    ((gtsam::skewSymmetric(l_w - m_w) - gtsam::skewSymmetric(j_w - m_w)) * (- Hm)) /
+                                    ((gtsam::skewSymmetric(l_w - m_w) - gtsam::skewSymmetric(j_w - m_w)) * (-Hm)) /
                                     n_w.norm();
 
         gtsam::Matrix36 temp =
