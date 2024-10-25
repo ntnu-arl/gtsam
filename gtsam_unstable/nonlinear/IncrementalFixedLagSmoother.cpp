@@ -67,7 +67,7 @@ FixedLagSmoother::Result IncrementalFixedLagSmoother::update(
     const NonlinearFactorGraph& newFactors, const Values& newTheta,
     const KeyTimestampMap& timestamps, const FactorIndices& factorsToRemove) {
 
-  const bool debug = ISDEBUG("IncrementalFixedLagSmoother update");
+  const bool debug = true; // ISDEBUG("IncrementalFixedLagSmoother update");
 
   if (debug) {
     std::cout << "IncrementalFixedLagSmoother::update() Start" << std::endl;
@@ -118,11 +118,25 @@ FixedLagSmoother::Result IncrementalFixedLagSmoother::update(
   std::set<Key> additionalKeys;
   for(Key key: marginalizableKeys) {
     ISAM2Clique::shared_ptr clique = isam_[key];
+    // Mark all frontal keys of the current clique.
+    additionalKeys.insert(clique->conditional()->frontals().begin(),
+                          clique->conditional()->frontals().end());
+    // Recursively mark all of the children key that contain the marginal key.
     for(const ISAM2Clique::shared_ptr& child: clique->children) {
       recursiveMarkAffectedKeys(key, child, additionalKeys);
     }
   }
   KeyList additionalMarkedKeys(additionalKeys.begin(), additionalKeys.end());
+
+  if (debug)
+  {
+    // Print out the additional keys
+    std::cout << "Additional Marked Keys: ";
+    for(Key key: additionalMarkedKeys) {
+      std::cout << DefaultKeyFormatter(key) << " ";
+    }
+    std::cout << std::endl;
+  }
 
   // Update iSAM2
   isamResult_ = isam_.update(newFactors, newTheta,

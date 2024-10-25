@@ -191,8 +191,8 @@ int main(int argc, char* argv[]) {
 
   auto p = imuParams();
 
-  std::shared_ptr<PreintegrationType> preintegrated =
-      std::make_shared<PreintegratedImuMeasurements>(p, prior_imu_bias);
+  std::shared_ptr<PreintegratedCombinedMeasurements> preintegrated =
+      std::make_shared<PreintegratedCombinedMeasurements>(p, prior_imu_bias);
 
   assert(preintegrated);
 
@@ -238,16 +238,16 @@ int main(int argc, char* argv[]) {
       correction_count++;
 
       // Adding IMU factor and GPS factor and optimizing.
-      auto preint_imu =
-          dynamic_cast<const PreintegratedImuMeasurements&>(*preintegrated);
-      ImuFactor imu_factor(X(correction_count - 1), V(correction_count - 1),
+      // auto preint_imu =
+      //     dynamic_cast<const PreintegratedImuMeasurements&>(*preintegrated);
+      CombinedImuFactor imu_factor(X(correction_count - 1), V(correction_count - 1),
                            X(correction_count), V(correction_count),
-                           B(correction_count - 1), preint_imu);
+                           B(correction_count - 1), B(correction_count), *preintegrated);
       graph->add(imu_factor);
-      imuBias::ConstantBias zero_bias(Vector3(0, 0, 0), Vector3(0, 0, 0));
-      graph->add(BetweenFactor<imuBias::ConstantBias>(
-          B(correction_count - 1), B(correction_count), zero_bias,
-          bias_noise_model));
+      // imuBias::ConstantBias zero_bias(Vector3(0, 0, 0), Vector3(0, 0, 0));
+      // graph->add(BetweenFactor<imuBias::ConstantBias>(
+      //     B(correction_count - 1), B(correction_count), zero_bias,
+      //     bias_noise_model));
 
       auto correction_noise = noiseModel::Isotropic::Sigma(3, 1.0);
       GPSFactor gps_factor(X(correction_count),

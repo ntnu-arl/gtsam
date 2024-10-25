@@ -465,6 +465,9 @@ ISAM2Result ISAM2::update(const NonlinearFactorGraph& newFactors,
   update.augmentVariableIndex(newFactors, result.newFactorsIndices,
                               &variableIndex_);
 
+  PrintSymbolicTree("Bayes Tree Before Recalculate:");
+
+
   // 8. Redo top of Bayes tree and update data structures
   recalculate(updateParams, relinKeys, &result);
   if (!result.unusedKeys.empty()) removeVariables(result.unusedKeys);
@@ -823,6 +826,39 @@ VectorValues ISAM2::gradientAtZero() const {
   for (const auto& root : this->roots()) root->addGradientAtZero(&g);
 
   return g;
+}
+
+/* ************************************************************************* */
+void ISAM2::PrintSymbolicTree(const std::string& label) {
+  std::cout << label << std::endl;
+  if (!this->roots().empty()) {
+    for(const ISAM2::sharedClique& root: this->roots()) {
+      PrintSymbolicTreeHelper(root);
+    }
+  } else
+    std::cout << "{Empty Tree}" << std::endl;
+}
+
+/* ************************************************************************* */
+void ISAM2::PrintSymbolicTreeHelper(
+    const ISAM2Clique::shared_ptr& clique, const std::string indent) {
+
+  // Print the current clique
+  std::cout << indent << "P( ";
+  for(Key key: clique->conditional()->frontals()) {
+    std::cout << DefaultKeyFormatter(key) << " ";
+  }
+  if (clique->conditional()->nrParents() > 0)
+    std::cout << "| ";
+  for(Key key: clique->conditional()->parents()) {
+    std::cout << DefaultKeyFormatter(key) << " ";
+  }
+  std::cout << ")" << std::endl;
+
+  // Recursively print all of the children
+  for(const ISAM2Clique::shared_ptr& child: clique->children) {
+    PrintSymbolicTreeHelper(child, indent + " ");
+  }
 }
 
 }  // namespace gtsam

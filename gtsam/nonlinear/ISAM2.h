@@ -346,6 +346,11 @@ class GTSAM_EXPORT ISAM2 : public BayesTree<ISAM2Clique> {
       ar & BOOST_SERIALIZATION_NVP(update_count_);
   }
 
+  void PrintSymbolicTree(const std::string &label = "Bayes Tree:");
+  void PrintSymbolicTreeHelper(
+      const gtsam::ISAM2Clique::shared_ptr &clique, const std::string indent =
+                                                        "");
+
 };  // ISAM2
 
 /// traits
