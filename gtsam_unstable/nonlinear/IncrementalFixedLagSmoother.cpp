@@ -67,7 +67,7 @@ FixedLagSmoother::Result IncrementalFixedLagSmoother::update(
     const NonlinearFactorGraph& newFactors, const Values& newTheta,
     const KeyTimestampMap& timestamps, const FactorIndices& factorsToRemove) {
 
-  const bool debug = true; // ISDEBUG("IncrementalFixedLagSmoother update");
+  const bool debug = ISDEBUG("IncrementalFixedLagSmoother update");
 
   if (debug) {
     std::cout << "IncrementalFixedLagSmoother::update() Start" << std::endl;

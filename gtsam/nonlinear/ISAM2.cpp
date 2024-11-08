@@ -465,7 +465,7 @@ ISAM2Result ISAM2::update(const NonlinearFactorGraph& newFactors,
   update.augmentVariableIndex(newFactors, result.newFactorsIndices,
                               &variableIndex_);
 
-  PrintSymbolicTree("Bayes Tree Before Recalculate:");
+  // PrintSymbolicTree("Bayes Tree Before Recalculate:");
 
 
   // 8. Redo top of Bayes tree and update data structures
