@@ -439,24 +439,26 @@ Vector9 NavState::coriolis(double dt, const Vector3& omega, bool secondOrder,
 Vector9 NavState::correctPIM(const Vector9& pim, double dt,
     const Vector3& n_gravity, const std::optional<Vector3>& omegaCoriolis,
     bool use2ndOrderCoriolis, OptionalJacobian<9, 9> H1,
-    OptionalJacobian<9, 9> H2) const {
+    OptionalJacobian<9, 9> H2, OptionalJacobian<9, 3> H3) const {
   const Rot3& nRb = R_;
   const Velocity3& n_v = v_; // derivative is Ri !
   const double dt22 = 0.5 * dt * dt;
 
   Vector9 xi;
   Matrix3 D_dP_Ri1, D_dP_Ri2, D_dP_nv, D_dV_Ri;
+  Matrix3 D_nRb_unrot_grav_P, D_nRb_unrot_grav_V; // Both of these are actually the same
   dR(xi) = dR(pim);
   dP(xi) = dP(pim)
-      + dt * nRb.unrotate(n_v, H1 ? &D_dP_Ri1 : 0, H2 ? &D_dP_nv : 0)
-      + dt22 * nRb.unrotate(n_gravity, H1 ? &D_dP_Ri2 : 0);
-  dV(xi) = dV(pim) + dt * nRb.unrotate(n_gravity, H1 ? &D_dV_Ri : 0);
+          + dt * nRb.unrotate(n_v, H1 ? &D_dP_Ri1 : 0, H2 ? &D_dP_nv : 0)
+      + dt22 * nRb.unrotate(n_gravity, H1 ? &D_dP_Ri2 : 0, H3 ? &D_nRb_unrot_grav_P : 0);
+  dV(xi) = dV(pim) + dt * nRb.unrotate(n_gravity, H1 ? &D_dV_Ri : 0,
+                                  H3 ? &D_nRb_unrot_grav_V : 0);
 
   if (omegaCoriolis) {
     xi += coriolis(dt, *omegaCoriolis, use2ndOrderCoriolis, H1);
   }
 
-  if (H1 || H2) {
+  if (H1 || H2 || H3) {
     Matrix3 Ri = nRb.matrix();
 
     if (H1) {
@@ -468,6 +470,14 @@ Vector9 NavState::correctPIM(const Vector9& pim, double dt,
     }
     if (H2) {
       H2->setIdentity();
+    }
+    if (H3) {
+      // The rotation part of xi does not depend on gravity:
+      H3->block<3,3>(0,0) = Matrix3::Zero();
+      // The position part: derivative is dt22 * (∂(nRb.unrotate(n_gravity))/∂n_gravity)
+      H3->block<3,3>(3,0) = dt22 * D_nRb_unrot_grav_P;
+      // The velocity part: derivative is dt * D_nRb_unrot_grav_V
+      H3->block<3,3>(6,0) = dt * D_nRb_unrot_grav_V;
     }
   }
 

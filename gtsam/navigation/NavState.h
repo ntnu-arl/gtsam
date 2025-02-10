@@ -262,7 +262,7 @@ public:
   Vector9 correctPIM(const Vector9& pim, double dt, const Vector3& n_gravity,
       const std::optional<Vector3>& omegaCoriolis, bool use2ndOrderCoriolis =
           false, OptionalJacobian<9, 9> H1 = {},
-      OptionalJacobian<9, 9> H2 = {}) const;
+      OptionalJacobian<9, 9> H2 = {}, OptionalJacobian<9,3> H3 = {}) const;
 
   /// @}
 

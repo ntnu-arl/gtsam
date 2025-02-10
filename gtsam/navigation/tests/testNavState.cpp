@@ -404,7 +404,7 @@ TEST(NavState, CorrectPIM) {
   std::function<Vector9(const NavState&, const Vector9&)> correctPIM =
       std::bind(&NavState::correctPIM, std::placeholders::_1,
                 std::placeholders::_2, dt, kGravity, kOmegaCoriolis, false,
-                nullptr, nullptr);
+                nullptr, nullptr, nullptr);
   kState1.correctPIM(xi, dt, kGravity, kOmegaCoriolis, false, aH1, aH2);
   EXPECT(assert_equal(numericalDerivative21(correctPIM, kState1, xi), aH1));
   EXPECT(assert_equal(numericalDerivative22(correctPIM, kState1, xi), aH2));
