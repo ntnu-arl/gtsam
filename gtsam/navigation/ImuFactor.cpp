@@ -266,7 +266,7 @@ ImuFactorWithGravity::ImuFactorWithGravity(Key pose_i, Key vel_i, Key pose_j, Ke
 
 //------------------------------------------------------------------------------
 NonlinearFactor::shared_ptr ImuFactorWithGravity::clone() const {
-return boost::static_pointer_cast<NonlinearFactor>(
+return std::static_pointer_cast<NonlinearFactor>(
     NonlinearFactor::shared_ptr(new This(*this)));
 }
 
@@ -297,9 +297,9 @@ return e != nullptr && base && pim;
 //------------------------------------------------------------------------------
 Vector ImuFactorWithGravity::evaluateError(const Pose3& pose_i, const Vector3& vel_i,
   const Pose3& pose_j, const Vector3& vel_j,
-  const imuBias::ConstantBias& bias_i, const Vector3& gravity, boost::optional<Matrix&> H1,
-  boost::optional<Matrix&> H2, boost::optional<Matrix&> H3,
-  boost::optional<Matrix&> H4, boost::optional<Matrix&> H5, boost::optional<Matrix&> H6) const {
+  const imuBias::ConstantBias& bias_i, const Vector3& gravity, OptionalMatrixType H1,
+  OptionalMatrixType H2, OptionalMatrixType H3,
+  OptionalMatrixType H4, OptionalMatrixType H5, OptionalMatrixType H6) const {
   std::cout << "Evaluating error" << std::endl;
     return _PIM_.computeErrorAndJacobians(pose_i, vel_i, pose_j, vel_j, bias_i, gravity,
     H1, H2, H3, H4, H5, H6);

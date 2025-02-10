@@ -146,7 +146,7 @@ NavState PreintegrationBase::predict(const NavState& state_i,
 NavState PreintegrationBase::predict(const NavState& state_i,
   const imuBias::ConstantBias& bias_i, OptionalJacobian<9, 9> H1,
   OptionalJacobian<9, 6> H2) const {
-    return predict(state_i, bias_i, p().n_gravity, H1, H2, boost::none);
+    return predict(state_i, bias_i, p().n_gravity, H1, H2, nullptr);
 }
 
 //------------------------------------------------------------------------------
@@ -186,7 +186,7 @@ Vector9 PreintegrationBase::computeError(const NavState& state_i,
   OptionalJacobian<9, 9> H1,
   OptionalJacobian<9, 9> H2,
   OptionalJacobian<9, 6> H3) const {
-    return computeError(state_i, state_j, bias_i, p().n_gravity, H1, H2, H3, boost::none);
+    return computeError(state_i, state_j, bias_i, p().n_gravity, H1, H2, H3, nullptr);
 }
 
 //------------------------------------------------------------------------------
@@ -227,7 +227,7 @@ Vector9 PreintegrationBase::computeErrorAndJacobians(const Pose3& pose_i,
   const imuBias::ConstantBias& bias_i, OptionalJacobian<9, 6> H1,
   OptionalJacobian<9, 3> H2, OptionalJacobian<9, 6> H3,
   OptionalJacobian<9, 3> H4, OptionalJacobian<9, 6> H5) const {
-    return computeErrorAndJacobians(pose_i, vel_i, pose_j, vel_j, bias_i, p().n_gravity, H1, H2, H3, H4, H5, boost::none);
+    return computeErrorAndJacobians(pose_i, vel_i, pose_j, vel_j, bias_i, p().n_gravity, H1, H2, H3, H4, H5, nullptr);
   }
 
 }  // namespace gtsam
