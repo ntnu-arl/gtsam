@@ -151,6 +151,12 @@ class GTSAM_EXPORT PreintegrationBase {
       OptionalJacobian<9, 6> H = {}) const = 0;
 
   /// Predict state at time j
+  NavState predict(const NavState& state_i, const imuBias::ConstantBias& bias_i, const Vector3& n_gravity,
+                   OptionalJacobian<9, 9> H1 = boost::none,
+                   OptionalJacobian<9, 6> H2 = boost::none,
+                   OptionalJacobian<9, 3> H3 = boost::none) const;
+
+  /// Predict state at time j
   NavState predict(const NavState& state_i, const imuBias::ConstantBias& bias_i,
                    OptionalJacobian<9, 9> H1 = {},
                    OptionalJacobian<9, 6> H2 = {}) const;
@@ -160,6 +166,12 @@ class GTSAM_EXPORT PreintegrationBase {
                        const imuBias::ConstantBias& bias_i,
                        OptionalJacobian<9, 9> H1, OptionalJacobian<9, 9> H2,
                        OptionalJacobian<9, 6> H3) const;
+
+  /// Calculate error given navStates and gravity
+  Vector9 computeError(const NavState& state_i, const NavState& state_j,
+    const imuBias::ConstantBias& bias_i, const Vector3& n_gravity,
+    OptionalJacobian<9, 9> H1, OptionalJacobian<9, 9> H2,
+    OptionalJacobian<9, 6> H3, OptionalJacobian<9, 3> H4) const;
 
   /**
    * Compute errors w.r.t. preintegrated measurements and jacobians
@@ -171,6 +183,13 @@ class GTSAM_EXPORT PreintegrationBase {
       OptionalJacobian<9, 6> H1 = {}, OptionalJacobian<9, 3> H2 = {},
       OptionalJacobian<9, 6> H3 = {}, OptionalJacobian<9, 3> H4 = {}, 
       OptionalJacobian<9, 6> H5 = {}) const;
+
+  Vector9 computeErrorAndJacobians(const Pose3& pose_i, const Vector3& vel_i,
+    const Pose3& pose_j, const Vector3& vel_j,
+    const imuBias::ConstantBias& bias_i, const Vector3& n_gravity, OptionalJacobian<9, 6> H1 =
+        boost::none, OptionalJacobian<9, 3> H2 = boost::none,
+    OptionalJacobian<9, 6> H3 = boost::none, OptionalJacobian<9, 3> H4 =
+        boost::none, OptionalJacobian<9, 6> H5 = boost::none, OptionalJacobian<9, 3> H6 = boost::none) const;
 
  private:
 #if GTSAM_ENABLE_BOOST_SERIALIZATION

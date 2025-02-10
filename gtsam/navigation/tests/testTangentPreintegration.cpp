@@ -98,6 +98,14 @@ TEST(ImuFactor, BiasCorrectionJacobians) {
 
 /* ************************************************************************* */
 TEST(TangentPreintegration, computeError) {
+  using ComputeErrorNoGravity = Vector9 (PreintegrationBase::*)(
+    const NavState &,
+    const NavState &,
+    const imuBias::ConstantBias &,
+    OptionalJacobian<9, 9>,
+    OptionalJacobian<9, 9>,
+    OptionalJacobian<9, 6>) const;
+
   TangentPreintegration pim(testing::Params());
   NavState x1, x2;
   imuBias::ConstantBias bias;
@@ -106,7 +114,7 @@ TEST(TangentPreintegration, computeError) {
   pim.computeError(x1, x2, bias, aH1, aH2, aH3);
   std::function<Vector9(const NavState&, const NavState&,
                         const imuBias::ConstantBias&)>
-      f = std::bind(&TangentPreintegration::computeError, pim,
+      f = std::bind(static_cast<ComputeErrorNoGravity>(&TangentPreintegration::computeError), pim,
                     std::placeholders::_1, std::placeholders::_2,
                     std::placeholders::_3, nullptr, nullptr,
                     nullptr);

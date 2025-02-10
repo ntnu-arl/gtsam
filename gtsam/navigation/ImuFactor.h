@@ -69,6 +69,7 @@ class GTSAM_EXPORT PreintegratedImuMeasurements: public PreintegrationType {
 
   friend class ImuFactor;
   friend class ImuFactor2;
+  friend class ImuFactorWithGravity;
 
 protected:
 
@@ -331,6 +332,106 @@ private:
 };
 // class ImuFactor2
 
+/**
+ * ImuFactorWithGravity is a 6-ways factor involving previous state (pose and velocity of
+ * the vehicle at previous time step), current state (pose and velocity at
+ * current time step), the bias estimate and the gravity. Following the preintegration
+ * scheme proposed in [2], the ImuFactorWithGravity includes many IMU measurements, which
+ * are "summarized" using the PreintegratedIMUMeasurements class.
+ * Note that this factor does not model "temporal consistency" of the biases
+ * (which are usually slowly varying quantities), which is up to the caller.
+ * See also CombinedImuFactor for a class that does this for you.
+ *
+ * @ingroup navigation
+ */
+class GTSAM_EXPORT ImuFactorWithGravity: public NoiseModelFactorN<Pose3, Vector3, Pose3, Vector3,
+    imuBias::ConstantBias, Vector3> {
+private:
+
+  typedef ImuFactorWithGravity This;
+  typedef NoiseModelFactorN<Pose3, Vector3, Pose3, Vector3,
+      imuBias::ConstantBias, Vector3> Base;
+
+  PreintegratedImuMeasurements _PIM_;
+
+public:
+
+  /** Shorthand for a smart pointer to a factor */
+#if !defined(_MSC_VER) && __GNUC__ == 4 && __GNUC_MINOR__ > 5
+  typedef typename boost::shared_ptr<ImuFactorWithGravity> shared_ptr;
+#else
+  typedef boost::shared_ptr<ImuFactorWithGravity> shared_ptr;
+#endif
+
+  /** Default constructor - only use for serialization */
+  ImuFactorWithGravity() {}
+
+  /**
+   * Constructor
+   * @param pose_i Previous pose key
+   * @param vel_i  Previous velocity key
+   * @param pose_j Current pose key
+   * @param vel_j  Current velocity key
+   * @param bias   Previous bias key
+   * @param preintegratedMeasurements The preintegreated measurements since the
+   * last pose.
+   */
+  ImuFactorWithGravity(Key pose_i, Key vel_i, Key pose_j, Key vel_j, Key bias, Key gravity,
+      const PreintegratedImuMeasurements& preintegratedMeasurements);
+
+  ~ImuFactorWithGravity() override {
+  }
+
+  /// @return a deep copy of this factor
+  gtsam::NonlinearFactor::shared_ptr clone() const override;
+
+  /// @name Testable
+  /// @{
+  GTSAM_EXPORT friend std::ostream& operator<<(std::ostream& os, const ImuFactorWithGravity&);
+  void print(const std::string& s = "", const KeyFormatter& keyFormatter =
+                                            DefaultKeyFormatter) const override;
+  bool equals(const NonlinearFactor& expected, double tol = 1e-9) const override;
+  /// @}
+
+  /** Access the preintegrated measurements. */
+
+  const PreintegratedImuMeasurements& preintegratedMeasurements() const {
+    return _PIM_;
+  }
+
+  /** implement functions needed to derive from Factor */
+
+  /// vector of errors
+  Vector evaluateError(const Pose3& pose_i, const Vector3& vel_i,
+      const Pose3& pose_j, const Vector3& vel_j,
+      const imuBias::ConstantBias& bias_i, const Vector3& gravity, boost::optional<Matrix&> H1 =
+          boost::none, boost::optional<Matrix&> H2 = boost::none,
+      boost::optional<Matrix&> H3 = boost::none, boost::optional<Matrix&> H4 =
+          boost::none, boost::optional<Matrix&> H5 = boost::none, boost::optional<Matrix&> H6 = boost::none) const override;
+
+#ifdef GTSAM_TANGENT_PREINTEGRATION
+  /// Merge two pre-integrated measurement classes
+  static PreintegratedImuMeasurements Merge(
+      const PreintegratedImuMeasurements& pim01,
+      const PreintegratedImuMeasurements& pim12);
+
+  /// Merge two factors
+  static shared_ptr Merge(const shared_ptr& f01, const shared_ptr& f12);
+#endif
+
+ private:
+  /** Serialization function */
+  friend class boost::serialization::access;
+  template<class ARCHIVE>
+  void serialize(ARCHIVE & ar, const unsigned int /*version*/) {
+    // NoiseModelFactor5 instead of NoiseModelFactorN for backward compatibility
+    ar & boost::serialization::make_nvp("NoiseModelFactor6",
+         boost::serialization::base_object<Base>(*this));
+    ar & BOOST_SERIALIZATION_NVP(_PIM_);
+  }
+};
+// class ImuFactorWithGravity
+
 template <>
 struct traits<PreintegratedImuMeasurements> : public Testable<PreintegratedImuMeasurements> {};
 
@@ -339,5 +440,8 @@ struct traits<ImuFactor> : public Testable<ImuFactor> {};
 
 template <>
 struct traits<ImuFactor2> : public Testable<ImuFactor2> {};
+
+template <>
+struct traits<ImuFactorWithGravity> : public Testable<ImuFactorWithGravity> {};
 
 } /// namespace gtsam

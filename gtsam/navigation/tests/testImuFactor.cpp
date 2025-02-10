@@ -118,6 +118,15 @@ TEST(ImuFactor, Accelerating) {
 
 /* ************************************************************************* */
 TEST(ImuFactor, PreintegratedMeasurements) {
+  // Define a type alias for the overload without the gravity parameter:
+  using ComputeErrorNoGravity = Vector9 (PreintegrationBase::*)(
+      const NavState &,
+      const NavState &,
+      const imuBias::ConstantBias &,
+      OptionalJacobian<9, 9>,
+      OptionalJacobian<9, 9>,
+      OptionalJacobian<9, 6>) const;
+
   // Measurements
   const double a = 0.1, w = M_PI / 100.0;
   Vector3 measuredAcc(a, 0.0, 0.0);
@@ -146,7 +155,7 @@ TEST(ImuFactor, PreintegratedMeasurements) {
   Matrix96 aH3;
   actual.computeError(x1, x2, bias, aH1, aH2, aH3);
   std::function<Vector9(const NavState&, const NavState&, const Bias&)> f =
-      std::bind(&PreintegrationBase::computeError, actual,
+      std::bind(static_cast<ComputeErrorNoGravity>(&PreintegrationBase::computeError), actual,
                   std::placeholders::_1, std::placeholders::_2, std::placeholders::_3,
                   nullptr, nullptr, nullptr);
   EXPECT(assert_equal(numericalDerivative31(f, x1, x2, bias), aH1, 1e-9));
@@ -191,6 +200,12 @@ static const NavState state2(x2, v2);
 /* ************************************************************************* */
 TEST(ImuFactor, PreintegrationBaseMethods) {
   using namespace common;
+  using PredictNoGravity =
+    NavState (PreintegrationBase::*)(const NavState&,
+                                      const imuBias::ConstantBias&,
+                                      OptionalJacobian<9, 9>,
+                                      OptionalJacobian<9, 6>) const;
+
   auto p = testing::Params();
   p->omegaCoriolis = Vector3(0.02, 0.03, 0.04);
   p->use2ndOrderCoriolis = true;
@@ -211,11 +226,11 @@ TEST(ImuFactor, PreintegrationBaseMethods) {
   Matrix96 aH2;
   NavState predictedState = pim.predict(state1, kZeroBias, aH1, aH2);
   Matrix eH1 = numericalDerivative11<NavState, NavState>(
-      std::bind(&PreintegrationBase::predict, pim, std::placeholders::_1,
+      std::bind(static_cast<PredictNoGravity>(&PreintegrationBase::predict), pim, std::placeholders::_1,
           kZeroBias, nullptr, nullptr), state1);
   EXPECT(assert_equal(eH1, aH1));
   Matrix eH2 = numericalDerivative11<NavState, Bias>(
-      std::bind(&PreintegrationBase::predict, pim, state1,
+      std::bind(static_cast<PredictNoGravity>(&PreintegrationBase::predict), pim, state1,
           std::placeholders::_1, nullptr, nullptr), kZeroBias);
   EXPECT(assert_equal(eH2, aH2));
 }

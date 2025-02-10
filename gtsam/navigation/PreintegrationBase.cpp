@@ -115,17 +115,18 @@ void PreintegrationBase::integrateMeasurement(const Vector3& measuredAcc,
 
 //------------------------------------------------------------------------------
 NavState PreintegrationBase::predict(const NavState& state_i,
-    const imuBias::ConstantBias& bias_i, OptionalJacobian<9, 9> H1,
-    OptionalJacobian<9, 6> H2) const {
+    const imuBias::ConstantBias& bias_i, const Vector3& n_gravity, OptionalJacobian<9, 9> H1,
+    OptionalJacobian<9, 6> H2, OptionalJacobian<9, 3> H3) const {
   Matrix96 D_biasCorrected_bias;
   Vector9 biasCorrected = biasCorrectedDelta(bias_i,
                                              H2 ? &D_biasCorrected_bias : nullptr);
 
   // Correct for initial velocity and gravity
   Matrix9 D_delta_state, D_delta_biasCorrected;
-  Vector9 xi = state_i.correctPIM(biasCorrected, deltaTij_, p().n_gravity,
+  Matrix93 D_delta_gravity;
+  Vector9 xi = state_i.correctPIM(biasCorrected, deltaTij_, n_gravity,
                                   p().omegaCoriolis, p().use2ndOrderCoriolis, H1 ? &D_delta_state : nullptr,
-                                  H2 ? &D_delta_biasCorrected : nullptr);
+                                  H2 ? &D_delta_biasCorrected : nullptr, H3 ? &D_delta_gravity : nullptr);
 
   // Use retract to get back to NavState manifold
   Matrix9 D_predict_state, D_predict_delta;
@@ -136,41 +137,64 @@ NavState PreintegrationBase::predict(const NavState& state_i,
     *H1 = D_predict_state + D_predict_delta * D_delta_state;
   if (H2)
     *H2 = D_predict_delta * D_delta_biasCorrected * D_biasCorrected_bias;
+  if (H3)
+    *H3 = D_predict_delta * D_delta_gravity;
   return state_j;
+}
+
+//------------------------------------------------------------------------------
+NavState PreintegrationBase::predict(const NavState& state_i,
+  const imuBias::ConstantBias& bias_i, OptionalJacobian<9, 9> H1,
+  OptionalJacobian<9, 6> H2) const {
+    return predict(state_i, bias_i, p().n_gravity, H1, H2, boost::none);
 }
 
 //------------------------------------------------------------------------------
 Vector9 PreintegrationBase::computeError(const NavState& state_i,
                                          const NavState& state_j,
                                          const imuBias::ConstantBias& bias_i,
+                                         const Vector3& n_gravity,
                                          OptionalJacobian<9, 9> H1,
                                          OptionalJacobian<9, 9> H2,
-                                         OptionalJacobian<9, 6> H3) const {
+                                         OptionalJacobian<9, 6> H3,
+                                         OptionalJacobian<9, 3> H4) const {
   // Predict state at time j
   Matrix9 D_predict_state_i;
   Matrix96 D_predict_bias_i;
+  Matrix93 D_predict_gravity;
   NavState predictedState_j = predict(
-      state_i, bias_i, H1 ? &D_predict_state_i : 0, H3 ? &D_predict_bias_i : 0);
+      state_i, bias_i, n_gravity, H1 ? &D_predict_state_i : 0, H3 ? &D_predict_bias_i : 0, H4 ? &D_predict_gravity : 0);
 
   // Calculate error
   Matrix9 D_error_state_j, D_error_predict;
   Vector9 error =
       state_j.localCoordinates(predictedState_j, H2 ? &D_error_state_j : 0,
-                               H1 || H3 ? &D_error_predict : 0);
+                               H1 || H3 || H4 ? &D_error_predict : 0);
 
   if (H1) *H1 << D_error_predict * D_predict_state_i;
   if (H2) *H2 << D_error_state_j;
   if (H3) *H3 << D_error_predict * D_predict_bias_i;
+  if (H4) *H4 << D_error_predict * D_predict_gravity;
 
   return error;
 }
 
 //------------------------------------------------------------------------------
+Vector9 PreintegrationBase::computeError(const NavState& state_i,
+  const NavState& state_j,
+  const imuBias::ConstantBias& bias_i,
+  OptionalJacobian<9, 9> H1,
+  OptionalJacobian<9, 9> H2,
+  OptionalJacobian<9, 6> H3) const {
+    return computeError(state_i, state_j, bias_i, p().n_gravity, H1, H2, H3, boost::none);
+}
+
+//------------------------------------------------------------------------------
 Vector9 PreintegrationBase::computeErrorAndJacobians(const Pose3& pose_i,
     const Vector3& vel_i, const Pose3& pose_j, const Vector3& vel_j,
-    const imuBias::ConstantBias& bias_i, OptionalJacobian<9, 6> H1,
+    const imuBias::ConstantBias& bias_i, const Vector3& n_gravity, OptionalJacobian<9, 6> H1,
     OptionalJacobian<9, 3> H2, OptionalJacobian<9, 6> H3,
-    OptionalJacobian<9, 3> H4, OptionalJacobian<9, 6> H5) const {
+    OptionalJacobian<9, 3> H4, OptionalJacobian<9, 6> H5, OptionalJacobian<9, 3> H6) const {
 
   // Note that derivative of constructors below is not identity for velocity, but
   // a 9*3 matrix == Z_3x3, Z_3x3, state.R().transpose()
@@ -179,8 +203,8 @@ Vector9 PreintegrationBase::computeErrorAndJacobians(const Pose3& pose_i,
 
   // Predict state at time j
   Matrix9 D_error_state_i, D_error_state_j;
-  Vector9 error = computeError(state_i, state_j, bias_i,
-                         H1 || H2 ? &D_error_state_i : 0, H3 || H4 ? &D_error_state_j : 0, H5);
+  Vector9 error = computeError(state_i, state_j, bias_i, n_gravity,
+                         H1 || H2 ? &D_error_state_i : 0, H3 || H4 ? &D_error_state_j : 0, H5, H6);
 
   // Separate out derivatives in terms of 5 arguments
   // Note that doing so requires special treatment of velocities, as when treated as
@@ -196,5 +220,14 @@ Vector9 PreintegrationBase::computeErrorAndJacobians(const Pose3& pose_i,
 }
 
 //------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+Vector9 PreintegrationBase::computeErrorAndJacobians(const Pose3& pose_i,
+  const Vector3& vel_i, const Pose3& pose_j, const Vector3& vel_j,
+  const imuBias::ConstantBias& bias_i, OptionalJacobian<9, 6> H1,
+  OptionalJacobian<9, 3> H2, OptionalJacobian<9, 6> H3,
+  OptionalJacobian<9, 3> H4, OptionalJacobian<9, 6> H5) const {
+    return computeErrorAndJacobians(pose_i, vel_i, pose_j, vel_j, bias_i, p().n_gravity, H1, H2, H3, H4, H5, boost::none);
+  }
 
 }  // namespace gtsam

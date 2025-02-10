@@ -255,5 +255,102 @@ Vector ImuFactor2::evaluateError(const NavState& state_i,
 
 //------------------------------------------------------------------------------
 
+//------------------------------------------------------------------------------
+// ImuFactorWithGravity methods
+//------------------------------------------------------------------------------
+ImuFactorWithGravity::ImuFactorWithGravity(Key pose_i, Key vel_i, Key pose_j, Key vel_j, Key bias, Key gravity,
+  const PreintegratedImuMeasurements& pim) :
+  Base(noiseModel::Gaussian::Covariance(pim.preintMeasCov_), pose_i, vel_i,
+      pose_j, vel_j, bias, gravity), _PIM_(pim) {
+}
+
+//------------------------------------------------------------------------------
+NonlinearFactor::shared_ptr ImuFactorWithGravity::clone() const {
+return boost::static_pointer_cast<NonlinearFactor>(
+    NonlinearFactor::shared_ptr(new This(*this)));
+}
+
+//------------------------------------------------------------------------------
+std::ostream& operator<<(std::ostream& os, const ImuFactorWithGravity& f) {
+f._PIM_.print("preintegrated measurements:\n");
+os << "  noise model sigmas: " << f.noiseModel_->sigmas().transpose();
+return os;
+}
+
+//------------------------------------------------------------------------------
+void ImuFactorWithGravity::print(const string& s, const KeyFormatter& keyFormatter) const {
+cout << (s.empty() ? s : s + "\n") << "ImuFactorWithGravity(" << keyFormatter(this->key<1>())
+     << "," << keyFormatter(this->key<2>()) << "," << keyFormatter(this->key<3>())
+     << "," << keyFormatter(this->key<4>()) << "," << keyFormatter(this->key<5>()) << "," << keyFormatter(this->key<6>())
+     << ")\n";
+cout << *this << endl;
+}
+
+//------------------------------------------------------------------------------
+bool ImuFactorWithGravity::equals(const NonlinearFactor& other, double tol) const {
+const This *e = dynamic_cast<const This*>(&other);
+const bool base = Base::equals(*e, tol);
+const bool pim = _PIM_.equals(e->_PIM_, tol);
+return e != nullptr && base && pim;
+}
+
+//------------------------------------------------------------------------------
+Vector ImuFactorWithGravity::evaluateError(const Pose3& pose_i, const Vector3& vel_i,
+  const Pose3& pose_j, const Vector3& vel_j,
+  const imuBias::ConstantBias& bias_i, const Vector3& gravity, boost::optional<Matrix&> H1,
+  boost::optional<Matrix&> H2, boost::optional<Matrix&> H3,
+  boost::optional<Matrix&> H4, boost::optional<Matrix&> H5, boost::optional<Matrix&> H6) const {
+  std::cout << "Evaluating error" << std::endl;
+    return _PIM_.computeErrorAndJacobians(pose_i, vel_i, pose_j, vel_j, bias_i, gravity,
+    H1, H2, H3, H4, H5, H6);
+}
+
+//------------------------------------------------------------------------------
+#ifdef GTSAM_TANGENT_PREINTEGRATION
+PreintegratedImuMeasurements ImuFactorWithGravity::Merge(
+  const PreintegratedImuMeasurements& pim01,
+  const PreintegratedImuMeasurements& pim12) {
+if (!pim01.matchesParamsWith(pim12))
+throw std::domain_error(
+    "Cannot merge PreintegratedImuMeasurements with different params");
+
+if (pim01.params()->body_P_sensor)
+throw std::domain_error(
+    "Cannot merge PreintegratedImuMeasurements with sensor pose yet");
+
+// the bias for the merged factor will be the bias from 01
+PreintegratedImuMeasurements pim02 = pim01;
+
+Matrix9 H1, H2;
+pim02.mergeWith(pim12, &H1, &H2);
+
+return pim02;
+}
+
+//------------------------------------------------------------------------------
+ImuFactorWithGravity::shared_ptr ImuFactorWithGravity::Merge(const shared_ptr& f01,
+  const shared_ptr& f12) {
+// IMU bias keys must be the same.
+if (f01->key<5>() != f12->key<5>())
+throw std::domain_error("ImuFactorWithGravity::Merge: IMU bias keys must be the same");
+
+// expect intermediate pose, velocity keys to matchup.
+if (f01->key<3>() != f12->key<1>() || f01->key<4>() != f12->key<2>())
+throw std::domain_error(
+    "ImuFactorWithGravity::Merge: intermediate pose, velocity keys need to match up");
+
+// return new factor
+auto pim02 =
+Merge(f01->preintegratedMeasurements(), f12->preintegratedMeasurements());
+return boost::make_shared<ImuFactorWithGravity>(f01->key<1>(),  // P0
+    f01->key<2>(),  // V0
+    f12->key<3>(),  // P2
+    f12->key<4>(),  // V2
+    f01->key<5>(),  // B
+    f01->key<6>(),  // G
+    pim02);
+}
+#endif
+
 }
 // namespace gtsam
