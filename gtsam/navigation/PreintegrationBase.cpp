@@ -115,16 +115,19 @@ void PreintegrationBase::integrateMeasurement(const Vector3& measuredAcc,
 
 //------------------------------------------------------------------------------
 NavState PreintegrationBase::predict(const NavState& state_i,
-    const imuBias::ConstantBias& bias_i, const Vector3& n_gravity, OptionalJacobian<9, 9> H1,
-    OptionalJacobian<9, 6> H2, OptionalJacobian<9, 3> H3) const {
+    const imuBias::ConstantBias& bias_i, const Unit3& n_gravity, OptionalJacobian<9, 9> H1,
+    OptionalJacobian<9, 6> H2, OptionalJacobian<9, 2> H3) const {
   Matrix96 D_biasCorrected_bias;
   Vector9 biasCorrected = biasCorrectedDelta(bias_i,
                                              H2 ? &D_biasCorrected_bias : nullptr);
+                                             
+  // Compute gravity vector
+  const Vector3 n_gravity_vec = n_gravity.unitVector() * p().n_gravity.norm();
 
   // Correct for initial velocity and gravity
   Matrix9 D_delta_state, D_delta_biasCorrected;
-  Matrix93 D_delta_gravity;
-  Vector9 xi = state_i.correctPIM(biasCorrected, deltaTij_, n_gravity,
+  Matrix92 D_delta_gravity;
+  Vector9 xi = state_i.correctPIM(biasCorrected, deltaTij_, n_gravity_vec,
                                   p().omegaCoriolis, p().use2ndOrderCoriolis, H1 ? &D_delta_state : nullptr,
                                   H2 ? &D_delta_biasCorrected : nullptr, H3 ? &D_delta_gravity : nullptr);
 
@@ -146,22 +149,22 @@ NavState PreintegrationBase::predict(const NavState& state_i,
 NavState PreintegrationBase::predict(const NavState& state_i,
   const imuBias::ConstantBias& bias_i, OptionalJacobian<9, 9> H1,
   OptionalJacobian<9, 6> H2) const {
-    return predict(state_i, bias_i, p().n_gravity, H1, H2, nullptr);
+    return predict(state_i, bias_i, Unit3(p().n_gravity), H1, H2, nullptr);
 }
 
 //------------------------------------------------------------------------------
 Vector9 PreintegrationBase::computeError(const NavState& state_i,
                                          const NavState& state_j,
                                          const imuBias::ConstantBias& bias_i,
-                                         const Vector3& n_gravity,
+                                         const Unit3& n_gravity,
                                          OptionalJacobian<9, 9> H1,
                                          OptionalJacobian<9, 9> H2,
                                          OptionalJacobian<9, 6> H3,
-                                         OptionalJacobian<9, 3> H4) const {
+                                         OptionalJacobian<9, 2> H4) const {
   // Predict state at time j
   Matrix9 D_predict_state_i;
   Matrix96 D_predict_bias_i;
-  Matrix93 D_predict_gravity;
+  Matrix92 D_predict_gravity;
   NavState predictedState_j = predict(
       state_i, bias_i, n_gravity, H1 ? &D_predict_state_i : 0, H3 ? &D_predict_bias_i : 0, H4 ? &D_predict_gravity : 0);
 
@@ -186,15 +189,15 @@ Vector9 PreintegrationBase::computeError(const NavState& state_i,
   OptionalJacobian<9, 9> H1,
   OptionalJacobian<9, 9> H2,
   OptionalJacobian<9, 6> H3) const {
-    return computeError(state_i, state_j, bias_i, p().n_gravity, H1, H2, H3, nullptr);
+    return computeError(state_i, state_j, bias_i, Unit3(p().n_gravity), H1, H2, H3, nullptr);
 }
 
 //------------------------------------------------------------------------------
 Vector9 PreintegrationBase::computeErrorAndJacobians(const Pose3& pose_i,
     const Vector3& vel_i, const Pose3& pose_j, const Vector3& vel_j,
-    const imuBias::ConstantBias& bias_i, const Vector3& n_gravity, OptionalJacobian<9, 6> H1,
+    const imuBias::ConstantBias& bias_i, const Unit3& n_gravity, OptionalJacobian<9, 6> H1,
     OptionalJacobian<9, 3> H2, OptionalJacobian<9, 6> H3,
-    OptionalJacobian<9, 3> H4, OptionalJacobian<9, 6> H5, OptionalJacobian<9, 3> H6) const {
+    OptionalJacobian<9, 3> H4, OptionalJacobian<9, 6> H5, OptionalJacobian<9, 2> H6) const {
 
   // Note that derivative of constructors below is not identity for velocity, but
   // a 9*3 matrix == Z_3x3, Z_3x3, state.R().transpose()
@@ -227,7 +230,7 @@ Vector9 PreintegrationBase::computeErrorAndJacobians(const Pose3& pose_i,
   const imuBias::ConstantBias& bias_i, OptionalJacobian<9, 6> H1,
   OptionalJacobian<9, 3> H2, OptionalJacobian<9, 6> H3,
   OptionalJacobian<9, 3> H4, OptionalJacobian<9, 6> H5) const {
-    return computeErrorAndJacobians(pose_i, vel_i, pose_j, vel_j, bias_i, p().n_gravity, H1, H2, H3, H4, H5, nullptr);
+    return computeErrorAndJacobians(pose_i, vel_i, pose_j, vel_j, bias_i, Unit3(p().n_gravity), H1, H2, H3, H4, H5, nullptr);
   }
 
 }  // namespace gtsam

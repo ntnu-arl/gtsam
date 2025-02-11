@@ -345,12 +345,12 @@ private:
  * @ingroup navigation
  */
 class GTSAM_EXPORT ImuFactorWithGravity: public NoiseModelFactorN<Pose3, Vector3, Pose3, Vector3,
-    imuBias::ConstantBias, Vector3> {
+    imuBias::ConstantBias, Unit3> {
 private:
 
   typedef ImuFactorWithGravity This;
   typedef NoiseModelFactorN<Pose3, Vector3, Pose3, Vector3,
-      imuBias::ConstantBias, Vector3> Base;
+      imuBias::ConstantBias, Unit3> Base;
 
   PreintegratedImuMeasurements _PIM_;
 
@@ -409,7 +409,7 @@ public:
   Vector evaluateError(const Pose3& pose_i, const Vector3& vel_i,
                        const Pose3& pose_j, const Vector3& vel_j,
                        const imuBias::ConstantBias& bias_i,
-                       const Vector3& gravity, OptionalMatrixType H1,
+                       const Unit3& gravity, OptionalMatrixType H1,
                        OptionalMatrixType H2, OptionalMatrixType H3,
                        OptionalMatrixType H4, OptionalMatrixType H5,
                        OptionalMatrixType H6) const override;

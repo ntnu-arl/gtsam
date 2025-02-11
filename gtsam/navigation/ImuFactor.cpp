@@ -297,7 +297,7 @@ return e != nullptr && base && pim;
 //------------------------------------------------------------------------------
 Vector ImuFactorWithGravity::evaluateError(const Pose3& pose_i, const Vector3& vel_i,
   const Pose3& pose_j, const Vector3& vel_j,
-  const imuBias::ConstantBias& bias_i, const Vector3& gravity, OptionalMatrixType H1,
+  const imuBias::ConstantBias& bias_i, const Unit3& gravity, OptionalMatrixType H1,
   OptionalMatrixType H2, OptionalMatrixType H3,
   OptionalMatrixType H4, OptionalMatrixType H5, OptionalMatrixType H6) const {
   std::cout << "Evaluating error" << std::endl;

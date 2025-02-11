@@ -439,10 +439,13 @@ Vector9 NavState::coriolis(double dt, const Vector3& omega, bool secondOrder,
 Vector9 NavState::correctPIM(const Vector9& pim, double dt,
     const Vector3& n_gravity, const std::optional<Vector3>& omegaCoriolis,
     bool use2ndOrderCoriolis, OptionalJacobian<9, 9> H1,
-    OptionalJacobian<9, 9> H2, OptionalJacobian<9, 3> H3) const {
+    OptionalJacobian<9, 9> H2, OptionalJacobian<9, 2> H3) const {
   const Rot3& nRb = R_;
   const Velocity3& n_v = v_; // derivative is Ri !
   const double dt22 = 0.5 * dt * dt;
+
+  // The gravity is actually made of two components - the constant magnitude and variable direction
+  Matrix32 D_grav_gdirection = Unit3(n_gravity).basis();
 
   Vector9 xi;
   Matrix3 D_dP_Ri1, D_dP_Ri2, D_dP_nv, D_dV_Ri;
@@ -473,11 +476,11 @@ Vector9 NavState::correctPIM(const Vector9& pim, double dt,
     }
     if (H3) {
       // The rotation part of xi does not depend on gravity:
-      H3->block<3,3>(0,0) = Matrix3::Zero();
+      H3->block<3,2>(0,0) = Matrix32::Zero();
       // The position part: derivative is dt22 * (∂(nRb.unrotate(n_gravity))/∂n_gravity)
-      H3->block<3,3>(3,0) = dt22 * D_nRb_unrot_grav_P;
+      H3->block<3,2>(3,0) = dt22 * D_nRb_unrot_grav_P * D_grav_gdirection * n_gravity.norm();
       // The velocity part: derivative is dt * D_nRb_unrot_grav_V
-      H3->block<3,3>(6,0) = dt * D_nRb_unrot_grav_V;
+      H3->block<3,2>(6,0) = dt * D_nRb_unrot_grav_V * D_grav_gdirection * n_gravity.norm();
     }
   }
 

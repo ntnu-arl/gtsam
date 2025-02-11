@@ -151,10 +151,10 @@ class GTSAM_EXPORT PreintegrationBase {
       OptionalJacobian<9, 6> H = {}) const = 0;
 
   /// Predict state at time j
-  NavState predict(const NavState& state_i, const imuBias::ConstantBias& bias_i, const Vector3& n_gravity,
+  NavState predict(const NavState& state_i, const imuBias::ConstantBias& bias_i, const Unit3& n_gravity,
                    OptionalJacobian<9, 9> H1 = {},
                    OptionalJacobian<9, 6> H2 = {},
-                   OptionalJacobian<9, 3> H3 = {}) const;
+                   OptionalJacobian<9, 2> H3 = {}) const;
 
   /// Predict state at time j
   NavState predict(const NavState& state_i, const imuBias::ConstantBias& bias_i,
@@ -169,9 +169,9 @@ class GTSAM_EXPORT PreintegrationBase {
 
   /// Calculate error given navStates and gravity
   Vector9 computeError(const NavState& state_i, const NavState& state_j,
-    const imuBias::ConstantBias& bias_i, const Vector3& n_gravity,
+    const imuBias::ConstantBias& bias_i, const Unit3& n_gravity,
     OptionalJacobian<9, 9> H1, OptionalJacobian<9, 9> H2,
-    OptionalJacobian<9, 6> H3, OptionalJacobian<9, 3> H4) const;
+    OptionalJacobian<9, 6> H3, OptionalJacobian<9, 2> H4) const;
 
   /**
    * Compute errors w.r.t. preintegrated measurements and jacobians
@@ -186,10 +186,10 @@ class GTSAM_EXPORT PreintegrationBase {
 
   Vector9 computeErrorAndJacobians(const Pose3& pose_i, const Vector3& vel_i,
     const Pose3& pose_j, const Vector3& vel_j,
-    const imuBias::ConstantBias& bias_i, const Vector3& n_gravity, OptionalJacobian<9, 6> H1 =
+    const imuBias::ConstantBias& bias_i, const Unit3& n_gravity, OptionalJacobian<9, 6> H1 =
         {}, OptionalJacobian<9, 3> H2 = {},
     OptionalJacobian<9, 6> H3 = {}, OptionalJacobian<9, 3> H4 =
-        {}, OptionalJacobian<9, 6> H5 = {}, OptionalJacobian<9, 3> H6 = {}) const;
+        {}, OptionalJacobian<9, 6> H5 = {}, OptionalJacobian<9, 2> H6 = {}) const;
 
  private:
 #if GTSAM_ENABLE_BOOST_SERIALIZATION
