@@ -356,11 +356,14 @@ private:
 
 public:
 
+  // Provide access to the Matrix& version of evaluateError:
+  using Base::evaluateError;
+
   /** Shorthand for a smart pointer to a factor */
 #if !defined(_MSC_VER) && __GNUC__ == 4 && __GNUC_MINOR__ > 5
-  typedef typename std::shared_ptr<ImuFactor> shared_ptr;
+  typedef typename std::shared_ptr<ImuFactorWithGravity> shared_ptr;
 #else
-  typedef std::shared_ptr<ImuFactor> shared_ptr;
+  typedef std::shared_ptr<ImuFactorWithGravity> shared_ptr;
 #endif
 
   /** Default constructor - only use for serialization */
@@ -422,15 +425,15 @@ public:
 #endif
 
  private:
-/** Serialization function */
+  /** Serialization function */
 #if GTSAM_ENABLE_BOOST_SERIALIZATION
   friend class boost::serialization::access;
-  template <class ARCHIVE>
-  void serialize(ARCHIVE& ar, const unsigned int /*version*/) {
+  template<class ARCHIVE>
+  void serialize(ARCHIVE & ar, const unsigned int /*version*/) {
     // NoiseModelFactor6 instead of NoiseModelFactorN for backward compatibility
-    ar& boost::serialization::make_nvp(
-        "NoiseModelFactor6", boost::serialization::base_object<Base>(*this));
-    ar& BOOST_SERIALIZATION_NVP(_PIM_);
+    ar & boost::serialization::make_nvp("NoiseModelFactor6",
+         boost::serialization::base_object<Base>(*this));
+    ar & BOOST_SERIALIZATION_NVP(_PIM_);
   }
 #endif
 };
