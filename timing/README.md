@@ -579,6 +579,50 @@ This generates:
 - `results-w100-queries.pdf`
 - `results-w100-covariance.pdf`
 
+## IMU Factor With Gravity Benchmark
+
+`timeImuFactorWithGravity` times the gravity-aware IMU factors
+(`ImuFactorWithGravityT`, `ImuFactor2WithGravityT`,
+`CombinedImuFactorWithGravityT`, each with the `Unit3` and `Point3` gravity
+parametrizations) next to their plain siblings `ImuFactorT`, `ImuFactor2T` and
+`CombinedImuFactorT`, for every preintegration backend. It first reports
+preintegration cost per sample (as `timeImuIntegration` does), then, at a
+non-trivial linearization point, the cost of `unwhitenedError` (no Jacobians)
+and of `linearize` (error, all Jacobians, whitening, `JacobianFactor`) per
+call. The first block scales with `--samples`; the factor blocks are governed
+by `--calls` and `--repetitions` only, since each factor's measurements are
+integrated once.
+
+The source is picked up by the timing glob, so re-run CMake after adding it,
+then build and run it from the build directory:
+
+```bash
+make -j6 timeImuFactorWithGravity
+./timing/timeImuFactorWithGravity --samples 10000 --calls 2000 \
+  --warmups 20 --repetitions 41
+```
+
+Reported numbers are the median over repetitions, in nanoseconds per sample or
+per call. To compare builds of different commits, point
+`compare_imu_factor_with_gravity.py` at two or more binaries (earliest first).
+It runs them round-robin, reversing the order on odd rounds so thermal drift
+cancels, takes the median across rounds, and prints markdown tables with signed
+improvement percentages. On hybrid CPUs pin every run to one performance core
+with `--cpu`, otherwise core placement alone can move results by 10%:
+
+```bash
+python3 timing/compare_imu_factor_with_gravity.py --cpu 3 --rounds 5 \
+  --bin before=/path/to/before/timing/timeImuFactorWithGravity \
+  --bin after=/path/to/after/timing/timeImuFactorWithGravity \
+  --output imu_factor_with_gravity.md -- \
+  --samples 10000 --calls 2000 --warmups 20 --repetitions 41
+```
+
+To build an older base for the "before" side, check it out in a separate
+worktree and cherry-pick the factor commit and this benchmark commit onto it,
+for example `git worktree add ../gtsam-before <base>` followed by
+`git -C ../gtsam-before cherry-pick <factor-commit> <timing-commit>`.
+
 ## Notes
 
 - The benchmark timings measure covariance-query work after obtaining a final
