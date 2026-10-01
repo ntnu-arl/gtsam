@@ -47,8 +47,12 @@ foreach(subdir ${gtsam_unstable_subdirs})
     # Build convenience libraries
     file(GLOB subdir_srcs "${subdir}/*.cpp")
 	file(GLOB subdir_headers "${subdir}/*.h")
-    list(REMOVE_ITEM subdir_srcs ${excluded_sources})
-    list(REMOVE_ITEM subdir_headers ${excluded_headers})
+    if(excluded_sources)
+      list(REMOVE_ITEM subdir_srcs ${excluded_sources})
+    endif()
+    if(excluded_headers)
+      list(REMOVE_ITEM subdir_headers ${excluded_headers})
+    endif()
     set(${subdir}_srcs ${subdir_srcs} ${subdir_headers})
     gtsam_assign_source_folders("${${subdir}_srcs}") # Create MSVC structure
 

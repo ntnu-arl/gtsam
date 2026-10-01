@@ -11,7 +11,7 @@ endif()
 # Switch for using system Eigen or GTSAM-bundled Eigen
 if(GTSAM_USE_SYSTEM_EIGEN)
     # Since Eigen 3.3.0 a Eigen3Config.cmake is available so use it.
-    find_package(Eigen3 CONFIG REQUIRED) # need to find again as REQUIRED
+    find_package(Eigen3 3.4 CONFIG REQUIRED) # Matrix initializer lists require Eigen 3.4.
 
     # check if MKL is also enabled - can have one or the other, but not both!
     # Note: Eigen >= v3.2.5 includes our patches

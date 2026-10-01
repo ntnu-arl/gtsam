@@ -79,11 +79,17 @@ foreach(subdir ${gtsam_subdirs})
       list(APPEND subdir_srcs ${subdir_cuda_srcs})
     else()
       file(GLOB_RECURSE subdir_cuda_srcs "${subdir}/cuda/*")
-      list(REMOVE_ITEM subdir_srcs ${subdir_cuda_srcs})
+      if(subdir_cuda_srcs)
+        list(REMOVE_ITEM subdir_srcs ${subdir_cuda_srcs})
+      endif()
     endif()
-    list(REMOVE_ITEM subdir_srcs ${excluded_sources})
-	file(GLOB subdir_test_files "${subdir}/tests/*")
-	list(REMOVE_ITEM subdir_srcs ${subdir_test_files}) # Remove test files from sources compiled into library
+    if(excluded_sources)
+      list(REMOVE_ITEM subdir_srcs ${excluded_sources})
+    endif()
+    file(GLOB subdir_test_files "${subdir}/tests/*")
+    if(subdir_test_files)
+      list(REMOVE_ITEM subdir_srcs ${subdir_test_files}) # Remove test files from sources compiled into library
+    endif()
     gtsam_assign_source_folders("${subdir_srcs}") # Create MSVC structure
     set(${subdir}_srcs ${subdir_srcs})
 

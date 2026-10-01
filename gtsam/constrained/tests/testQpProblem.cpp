@@ -67,6 +67,20 @@ TEST(QpCost, HessianVectorError) {
   EXPECT_DOUBLES_EQUAL(expected, cost.error(VectorValue(x)), 1e-12);
 }
 
+// Verifies shared factors retain their cost and reject null pointers.
+TEST(QpCost, SharedGaussianFactor) {
+  const Matrix G{{2.0, 0.5}, {0.5, 3.0}};
+  const Vector2 g{0.2, -0.3};
+  const GaussianFactor::shared_ptr factor =
+      std::make_shared<HessianFactor>(x0, G, g, 1.7);
+  const QpCost cost(factor);
+  const Values values = VectorValue(Vector2{1.0, 2.0});
+  const QpCost expected(HessianFactor(x0, G, g, 1.7));
+  EXPECT_DOUBLES_EQUAL(expected.error(values), cost.error(values), 1e-12);
+  CHECK_EXCEPTION({ QpCost nullCost(GaussianFactor::shared_ptr{}); },
+                  std::invalid_argument);
+}
+
 // Verifies row-space matrix costs match the trace objective.
 TEST(QpCost, RowSpaceMatrixError) {
   Matrix Q = Matrix::Zero(5, 5);
